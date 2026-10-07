@@ -202,19 +202,14 @@ public sealed class LandingPageFunction
         }
 
         .api-tag {
-            margin-top: -4px;
-            padding-left: 7px;
-
-            color: var(--cyan);
-
-            font-size: 11px;
-
-            letter-spacing: .32em;
-            text-transform: uppercase;
-
-            text-shadow:
-                0 0 10px
-                rgba(25, 221, 255, .4);
+    margin-top: 14px;
+    padding-left: 7px;
+    color: var(--cyan);
+    font-size: 11px;
+    letter-spacing: .32em;
+    text-transform: uppercase;
+    text-shadow: 0 0 10px rgba(25, 221, 255, .4);
+                }
         }
 
         .status-panel {
