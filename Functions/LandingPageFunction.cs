@@ -210,7 +210,6 @@ public sealed class LandingPageFunction
     text-transform: uppercase;
     text-shadow: 0 0 10px rgba(25, 221, 255, .4);
                 }
-        }
 
         .status-panel {
             position: fixed;
