@@ -399,7 +399,7 @@ public sealed class LandingPageFunction
 
         if (resource is null)
         {
-            var debug = request.CreateResponse(HttpStatusCode.NotFound)
+            var debug = request.CreateResponse(HttpStatusCode.NotFound);
             await debug.WriteStringAsync(
                 $"Resource found but stream could not be opened: {resourceName}");
             return debug;
