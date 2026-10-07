@@ -10,15 +10,15 @@ public sealed class LandingPageFunction
 {
     [Function("PulseApiLandingPage")]
     public async Task<HttpResponseData> Run(
-        [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "{*path}")]
+        [HttpTrigger(
+            AuthorizationLevel.Anonymous,
+            "get",
+            Route = "{path:regex(^pulse-api(-logo)?$)?}")]
         HttpRequestData request,
         string? path)
     {
         var normalizedPath = (path ?? string.Empty).Trim('/');
 
-        // Serve the embedded logo directly from this catch-all route.
-        // This avoids a routing conflict between the landing page
-        // and a separate /pulse-api-logo Function.
         if (normalizedPath.Equals(
             "pulse-api-logo",
             StringComparison.OrdinalIgnoreCase))
@@ -26,45 +26,19 @@ public sealed class LandingPageFunction
             return await ServeLogoAsync(request);
         }
 
-        // Only root and /pulse-api should render the landing page.
-        if (!string.IsNullOrEmpty(normalizedPath) &&
-            !normalizedPath.Equals(
-                "pulse-api",
-                StringComparison.OrdinalIgnoreCase))
-        {
-            return request.CreateResponse(HttpStatusCode.NotFound);
-        }
-
         var version = WebUtility.HtmlEncode(
-            Environment.GetEnvironmentVariable(
-                "PROJECT_PULSE_API_VERSION") ?? "0.1.0");
+            Environment.GetEnvironmentVariable("PROJECT_PULSE_API_VERSION") ?? "0.1.0");
 
         var environment = WebUtility.HtmlEncode(
-            Environment.GetEnvironmentVariable(
-                "PROJECT_PULSE_API_ENVIRONMENT") ?? "POC");
+            Environment.GetEnvironmentVariable("PROJECT_PULSE_API_ENVIRONMENT") ?? "POC");
 
         var response = request.CreateResponse(HttpStatusCode.OK);
 
-        response.Headers.Add(
-            "Content-Type",
-            "text/html; charset=utf-8");
-
-        response.Headers.Add(
-            "Cache-Control",
-            "no-store, no-cache, must-revalidate");
-
-        response.Headers.Add(
-            "Pragma",
-            "no-cache");
-
-        response.Headers.Add(
-            "X-Content-Type-Options",
-            "nosniff");
-
-        response.Headers.Add(
-            "X-Frame-Options",
-            "DENY");
-
+        response.Headers.Add("Content-Type", "text/html; charset=utf-8");
+        response.Headers.Add("Cache-Control", "no-store, no-cache, must-revalidate");
+        response.Headers.Add("Pragma", "no-cache");
+        response.Headers.Add("X-Content-Type-Options", "nosniff");
+        response.Headers.Add("X-Frame-Options", "DENY");
         response.Headers.Add(
             "Content-Security-Policy",
             "default-src 'none'; img-src 'self'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; connect-src 'self'; base-uri 'none'; frame-ancestors 'none'; form-action 'none'");
@@ -94,8 +68,7 @@ public sealed class LandingPageFunction
             box-sizing: border-box;
         }
 
-        html,
-        body {
+        html, body {
             width: 100%;
             height: 100%;
             margin: 0;
@@ -110,49 +83,21 @@ public sealed class LandingPageFunction
             position: fixed;
             inset: -35%;
             pointer-events: none;
-
             background:
-                radial-gradient(
-                    circle at 30% 24%,
-                    rgba(25, 221, 255, .08),
-                    transparent 26%
-                ),
-                radial-gradient(
-                    circle at 70% 58%,
-                    rgba(138, 77, 255, .07),
-                    transparent 34%
-                );
-
-            animation:
-                atmosphere 8s ease-in-out infinite alternate;
+                radial-gradient(circle at 30% 24%, rgba(25, 221, 255, .08), transparent 26%),
+                radial-gradient(circle at 70% 58%, rgba(138, 77, 255, .07), transparent 34%);
+            animation: atmosphere 8s ease-in-out infinite alternate;
         }
 
         .grid {
             position: fixed;
             inset: 0;
             opacity: .10;
-
             background-image:
-                linear-gradient(
-                    rgba(74, 121, 255, .18) 1px,
-                    transparent 1px
-                ),
-                linear-gradient(
-                    90deg,
-                    rgba(74, 121, 255, .18) 1px,
-                    transparent 1px
-                );
-
-            background-size:
-                72px 72px;
-
-            mask-image:
-                radial-gradient(
-                    circle at center,
-                    #000 0%,
-                    transparent 72%
-                );
-
+                linear-gradient(rgba(74, 121, 255, .18) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(74, 121, 255, .18) 1px, transparent 1px);
+            background-size: 72px 72px;
+            mask-image: radial-gradient(circle at center, #000 0%, transparent 72%);
             pointer-events: none;
         }
 
@@ -162,22 +107,14 @@ public sealed class LandingPageFunction
             right: 0;
             height: 1px;
             top: -2px;
-
-            background:
-                linear-gradient(
-                    90deg,
-                    transparent 10%,
-                    rgba(25, 221, 255, .22),
-                    rgba(138, 77, 255, .18),
-                    transparent 90%
-                );
-
-            box-shadow:
-                0 0 8px rgba(25, 221, 255, .14);
-
-            animation:
-                scan 8s linear infinite;
-
+            background: linear-gradient(
+                90deg,
+                transparent 10%,
+                rgba(25, 221, 255, .22),
+                rgba(138, 77, 255, .18),
+                transparent 90%);
+            box-shadow: 0 0 8px rgba(25, 221, 255, .14);
+            animation: scan 8s linear infinite;
             pointer-events: none;
         }
 
@@ -193,207 +130,123 @@ public sealed class LandingPageFunction
             display: block;
             width: 100%;
             height: auto;
-
-            filter:
-                drop-shadow(
-                    0 0 18px
-                    rgba(41, 197, 255, .18)
-                );
+            filter: drop-shadow(0 0 18px rgba(41, 197, 255, .18));
         }
 
         .api-tag {
-    margin-top: 14px;
-    padding-left: 7px;
-    color: var(--cyan);
-    font-size: 11px;
-    letter-spacing: .32em;
-    text-transform: uppercase;
-    text-shadow: 0 0 10px rgba(25, 221, 255, .4);
-                }
+            margin-top: 14px;
+            padding-left: 7px;
+            color: var(--cyan);
+            font-size: 11px;
+            letter-spacing: .32em;
+            text-transform: uppercase;
+            text-shadow: 0 0 10px rgba(25, 221, 255, .4);
+        }
 
         .status-panel {
             position: fixed;
             top: 24px;
             right: 28px;
             z-index: 20;
-
             min-width: 365px;
-
             padding: 16px 18px;
-
-            border:
-                1px solid
-                rgba(25, 221, 255, .16);
-
+            border: 1px solid rgba(25, 221, 255, .16);
             border-radius: 8px;
-
-            background:
-                rgba(0, 0, 0, .56);
-
-            backdrop-filter:
-                blur(10px);
-
+            background: rgba(0, 0, 0, .56);
+            backdrop-filter: blur(10px);
             box-shadow:
-                0 0 30px
-                rgba(25, 221, 255, .05),
-                inset 0 0 25px
-                rgba(25, 221, 255, .025);
-
+                0 0 30px rgba(25, 221, 255, .05),
+                inset 0 0 25px rgba(25, 221, 255, .025);
             font-size: 12px;
             line-height: 1.9;
-
             color: #8098ba;
         }
 
         .status-title,
         .console-title {
             margin-bottom: 8px;
-
             color: #d7e6ff;
-
             font-weight: 700;
-
             letter-spacing: .18em;
             text-transform: uppercase;
         }
 
         .connected {
             color: var(--green);
-
-            text-shadow:
-                0 0 9px
-                rgba(57, 255, 154, .68);
+            text-shadow: 0 0 9px rgba(57, 255, 154, .68);
         }
 
         .disconnected {
             color: var(--red);
-
-            text-shadow:
-                0 0 9px
-                rgba(255, 77, 109, .62);
+            text-shadow: 0 0 9px rgba(255, 77, 109, .62);
         }
 
         .checking {
             color: var(--amber);
-
-            text-shadow:
-                0 0 8px
-                rgba(255, 200, 87, .35);
+            text-shadow: 0 0 8px rgba(255, 200, 87, .35);
         }
 
         .last-check {
             margin-top: 8px;
             padding-top: 7px;
-
-            border-top:
-                1px solid
-                rgba(111, 134, 168, .14);
-
+            border-top: 1px solid rgba(111, 134, 168, .14);
             color: #526783;
-
             font-size: 10px;
-
             letter-spacing: .08em;
         }
 
         .console {
             position: absolute;
-
             left: 50%;
             top: 53%;
-
-            transform:
-                translate(-50%, -50%);
-
-            width:
-                min(760px, 78vw);
-
+            transform: translate(-50%, -50%);
+            width: min(760px, 78vw);
             padding: 24px;
-
-            border:
-                1px solid
-                rgba(25, 221, 255, .16);
-
+            border: 1px solid rgba(25, 221, 255, .16);
             border-radius: 10px;
-
-            background:
-                rgba(0, 0, 0, .58);
-
+            background: rgba(0, 0, 0, .58);
             box-shadow:
-                0 0 60px
-                rgba(25, 221, 255, .06),
-                inset 0 0 35px
-                rgba(138, 77, 255, .025);
-
-            backdrop-filter:
-                blur(12px);
+                0 0 60px rgba(25, 221, 255, .06),
+                inset 0 0 35px rgba(138, 77, 255, .025);
+            backdrop-filter: blur(12px);
         }
 
         .prompt {
             color: var(--cyan);
-
             margin-bottom: 12px;
-
-            text-shadow:
-                0 0 8px
-                rgba(25, 221, 255, .35);
+            text-shadow: 0 0 8px rgba(25, 221, 255, .35);
         }
 
         .endpoint-select {
             width: 100%;
-
             padding: 13px 14px;
-
-            border:
-                1px solid
-                rgba(25, 221, 255, .24);
-
+            border: 1px solid rgba(25, 221, 255, .24);
             border-radius: 6px;
-
             background: #03070c;
-
             color: #d7e6ff;
-
             font: inherit;
-
             outline: none;
         }
 
         .endpoint-select:focus {
-            border-color:
-                rgba(25, 221, 255, .55);
-
-            box-shadow:
-                0 0 18px
-                rgba(25, 221, 255, .08);
+            border-color: rgba(25, 221, 255, .55);
+            box-shadow: 0 0 18px rgba(25, 221, 255, .08);
         }
 
         .endpoint-details {
             margin-top: 18px;
-
             min-height: 125px;
-
             padding: 16px;
-
-            border-left:
-                2px solid
-                rgba(25, 221, 255, .28);
-
-            background:
-                rgba(11, 18, 30, .36);
-
+            border-left: 2px solid rgba(25, 221, 255, .28);
+            background: rgba(11, 18, 30, .36);
             color: #8ea6c9;
-
             line-height: 1.8;
         }
 
         .method {
             display: inline-block;
-
             min-width: 48px;
-
             margin-right: 8px;
-
             font-weight: 700;
         }
 
@@ -411,102 +264,49 @@ public sealed class LandingPageFunction
 
         .description {
             margin-top: 8px;
-
             color: #7189aa;
         }
 
         .version {
             position: fixed;
-
             left: 24px;
             bottom: 19px;
-
             z-index: 5;
-
             display: flex;
-
             align-items: center;
-
             gap: 10px;
-
             color: var(--muted);
-
             font-size: 11px;
-
             font-weight: 600;
-
             letter-spacing: .16em;
-
             text-transform: uppercase;
-
             user-select: none;
         }
 
         .version .dot {
             width: 6px;
             height: 6px;
-
             border-radius: 50%;
-
             background: var(--cyan);
-
-            box-shadow:
-                0 0 12px
-                rgba(25, 221, 255, .95);
-
-            animation:
-                blink 2.1s
-                ease-in-out infinite;
+            box-shadow: 0 0 12px rgba(25, 221, 255, .95);
+            animation: blink 2.1s ease-in-out infinite;
         }
 
         @keyframes blink {
-            0%, 100% {
-                opacity: .62;
-            }
-
-            50% {
-                opacity: 1;
-            }
+            0%, 100% { opacity: .62; }
+            50% { opacity: 1; }
         }
 
         @keyframes scan {
-            from {
-                transform:
-                    translateY(0);
-
-                opacity: 0;
-            }
-
-            8% {
-                opacity: 1;
-            }
-
-            92% {
-                opacity: 1;
-            }
-
-            to {
-                transform:
-                    translateY(100vh);
-
-                opacity: 0;
-            }
+            from { transform: translateY(0); opacity: 0; }
+            8% { opacity: 1; }
+            92% { opacity: 1; }
+            to { transform: translateY(100vh); opacity: 0; }
         }
 
         @keyframes atmosphere {
-            from {
-                transform:
-                    scale(1);
-
-                opacity: .82;
-            }
-
-            to {
-                transform:
-                    scale(1.06);
-
-                opacity: 1;
-            }
+            from { transform: scale(1); opacity: .82; }
+            to { transform: scale(1.06); opacity: 1; }
         }
 
         @media (max-width: 820px) {
@@ -546,65 +346,34 @@ public sealed class LandingPageFunction
 </head>
 
 <body>
-    <div
-        class="grid"
-        aria-hidden="true">
-    </div>
-
-    <div
-        class="scanline"
-        aria-hidden="true">
-    </div>
+    <div class="grid" aria-hidden="true"></div>
+    <div class="scanline" aria-hidden="true"></div>
 
     <div class="brand">
-        <img
-            src="/pulse-api-logo"
-            alt="Project Pulse" />
-
-        <div class="api-tag">
-            API // MOCK CLAIMS INTERFACE
-        </div>
+        <img src="/pulse-api-logo" alt="Project Pulse" />
+        <div class="api-tag">API // MOCK CLAIMS INTERFACE</div>
     </div>
 
     <div class="status-panel">
-        <div class="status-title">
-            PULSE API SYSTEM STATUS
-        </div>
+        <div class="status-title">PULSE API SYSTEM STATUS</div>
 
         <div>
             Checking Function API........
-            <span
-                id="apiStatus"
-                class="checking">
-                &lt;CHECKING...&gt;
-            </span>
+            <span id="apiStatus" class="checking">&lt;CHECKING...&gt;</span>
         </div>
 
         <div>
             Checking Table Storage.......
-            <span
-                id="storageStatus"
-                class="checking">
-                &lt;CHECKING...&gt;
-            </span>
+            <span id="storageStatus" class="checking">&lt;CHECKING...&gt;</span>
         </div>
 
-        <div
-            class="last-check"
-            id="lastCheck">
-
-            LAST CHECK:
-            awaiting first health probe
+        <div class="last-check" id="lastCheck">
+            LAST CHECK: awaiting first health probe
         </div>
     </div>
 
-    <section
-        class="console"
-        aria-label="Project Pulse API endpoints">
-
-        <div class="console-title">
-            API COMMAND CONSOLE
-        </div>
+    <section class="console" aria-label="Project Pulse API endpoints">
+        <div class="console-title">API COMMAND CONSOLE</div>
 
         <div class="prompt">
             pulse-api&gt; select endpoint
@@ -652,10 +421,7 @@ public sealed class LandingPageFunction
         </span>
 
         <span>
-            Project Pulse API
-            &nbsp;&nbsp;v{{version}}
-            &nbsp;&nbsp;•&nbsp;&nbsp;
-            {{environment}}
+            Project Pulse API&nbsp;&nbsp;v{{version}}&nbsp;&nbsp;•&nbsp;&nbsp;{{environment}}
         </span>
     </div>
 
@@ -672,8 +438,7 @@ public sealed class LandingPageFunction
             pending: {
                 method: 'GET',
                 cls: 'get',
-                path:
-                    '/claims/pending?maxRecords=100',
+                path: '/claims/pending?maxRecords=100',
                 description:
                     'Returns up to TOP N pending fake claims for the Project Pulse poller.'
             },
@@ -681,8 +446,7 @@ public sealed class LandingPageFunction
             byid: {
                 method: 'GET',
                 cls: 'get',
-                path:
-                    '/claims/{uniqueId}',
+                path: '/claims/{uniqueId}',
                 description:
                     'Retrieves a previously generated or submitted claim by its unique ID.'
             },
@@ -690,8 +454,7 @@ public sealed class LandingPageFunction
             submit: {
                 method: 'POST',
                 cls: 'post',
-                path:
-                    '/claims',
+                path: '/claims',
                 description:
                     'Submits a fake claim. If the body is empty, FAKE_CLAIM_JSON is used as the template.'
             },
@@ -699,8 +462,7 @@ public sealed class LandingPageFunction
             result: {
                 method: 'POST',
                 cls: 'post',
-                path:
-                    '/claims/{uniqueId}/result',
+                path: '/claims/{uniqueId}/result',
                 description:
                     'Stores a simulated adjudication response for a claim.'
             }
@@ -710,14 +472,12 @@ public sealed class LandingPageFunction
             const selected =
                 endpoints[
                     document
-                        .getElementById(
-                            'endpointSelect')
+                        .getElementById('endpointSelect')
                         .value
                 ];
 
             document
-                .getElementById(
-                    'endpointDetails')
+                .getElementById('endpointDetails')
                 .innerHTML =
                     '<div>' +
                     '<span class="method ' +
@@ -734,13 +494,9 @@ public sealed class LandingPageFunction
                     '</div>';
         }
 
-        function setStatus(
-            id,
-            connected) {
-
+        function setStatus(id, connected) {
             const element =
-                document
-                    .getElementById(id);
+                document.getElementById(id);
 
             element.className =
                 connected
@@ -755,14 +511,10 @@ public sealed class LandingPageFunction
 
         async function checkHealth() {
             const api =
-                document
-                    .getElementById(
-                        'apiStatus');
+                document.getElementById('apiStatus');
 
             const storage =
-                document
-                    .getElementById(
-                        'storageStatus');
+                document.getElementById('storageStatus');
 
             api.className =
                 storage.className =
@@ -777,8 +529,7 @@ public sealed class LandingPageFunction
                     await fetch(
                         '/health',
                         {
-                            cache:
-                                'no-store'
+                            cache: 'no-store'
                         });
 
                 const data =
@@ -793,8 +544,7 @@ public sealed class LandingPageFunction
                     data.storage === true);
 
                 document
-                    .getElementById(
-                        'lastCheck')
+                    .getElementById('lastCheck')
                     .textContent =
                         'LAST CHECK: ' +
                         new Date()
@@ -810,8 +560,7 @@ public sealed class LandingPageFunction
                     false);
 
                 document
-                    .getElementById(
-                        'lastCheck')
+                    .getElementById('lastCheck')
                     .textContent =
                         'LAST CHECK: ' +
                         new Date()
@@ -821,14 +570,12 @@ public sealed class LandingPageFunction
         }
 
         document
-            .getElementById(
-                'endpointSelect')
+            .getElementById('endpointSelect')
             .addEventListener(
                 'change',
                 renderEndpoint);
 
         renderEndpoint();
-
         checkHealth();
 
         setInterval(
