@@ -38,29 +38,12 @@ public sealed class ClaimsApiFunctions
                     ? HttpStatusCode.OK
                     : HttpStatusCode.ServiceUnavailable);
 
-        await WriteJsonAsync(
-            response,
-            new
-            {
-                status = storageHealthy
-                    ? "Healthy"
-                    : "Unhealthy",
-
-                storage = storageHealthy,
-
-                autoGenerateOnPoll =
-                    GetBool(
-                        "FAKE_AUTO_GENERATE_ON_POLL",
-                        true),
-
-                claimsPerPoll =
-                    GetInt(
-                        "FAKE_CLAIMS_PER_POLL",
-                        10),
-
-                checkedAt =
-                    DateTimeOffset.UtcNow
-            });
+await WriteJsonAsync(
+    response,
+    new
+    {
+        IS_HEALTHY = storageHealthy
+    });
 
         return response;
     }
