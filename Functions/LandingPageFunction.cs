@@ -277,7 +277,7 @@ public sealed class LandingPageFunction
     </div>
 
     <div class="status-panel">
-        <div class="status-title">API SYSTEM STATUS</div>
+        <div class="status-title">PULSE API SYSTEM STATUS</div>
         <div>Checking Function API........ <span id="apiStatus" class="checking">&lt;CHECKING...&gt;</span></div>
         <div>Checking Table Storage....... <span id="storageStatus" class="checking">&lt;CHECKING...&gt;</span></div>
         <div class="last-check" id="lastCheck">LAST CHECK: awaiting first health probe</div>
