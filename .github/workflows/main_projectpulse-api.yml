@@ -35,6 +35,15 @@ jobs:
           pushd './${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}'
           dotnet build --configuration Release --output ./output
           popd
+
+      - name: 'Verify Project Pulse Build'
+        shell: bash
+        run: |
+          echo "=== OUTPUT FILES ==="
+          find ./output -maxdepth 3 -type f -print
+
+          echo "=== DLL STRING CHECK ==="
+          grep -a -o "project-pulse-logo.png" ./output/ProjectPulse.Api.dll || true
       
       - name: Login to Azure
         uses: azure/login@v2
