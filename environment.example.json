@@ -1,0 +1,52 @@
+[
+  {
+    "name": "PROJECT_PULSE_API_VERSION",
+    "value": "0.1.0",
+    "slotSetting": false
+  },
+  {
+    "name": "PROJECT_PULSE_API_ENVIRONMENT",
+    "value": "POC",
+    "slotSetting": false
+  },
+  {
+    "name": "AzureWebJobsDisableHomepage",
+    "value": "true",
+    "slotSetting": false
+  },
+  {
+    "name": "FAKE_CLAIM_JSON",
+    "value": "{\"uniqueId\":\"\",\"memberId\":\"MEM-12345\",\"claimAmount\":245.67,\"procedureCode\":\"99213\"}",
+    "slotSetting": false
+  },
+  {
+    "name": "FAKE_CLAIMS_PER_POLL",
+    "value": "10",
+    "slotSetting": false
+  },
+  {
+    "name": "FAKE_API_DELAY_MS",
+    "value": "0",
+    "slotSetting": false
+  },
+  {
+    "name": "FAKE_AUTO_GENERATE_ON_POLL",
+    "value": "true",
+    "slotSetting": false
+  },
+  {
+    "name": "UNIQUE_ID_FIELD",
+    "value": "uniqueId",
+    "slotSetting": false
+  },
+  {
+    "name": "MOCK_CLAIMS_TABLE",
+    "value": "PulseClaims",
+    "slotSetting": false
+  },
+  {
+    "name": "MOCK_STORAGE_CONNECTION_STRING",
+    "value": "",
+    "slotSetting": false
+  }
+]

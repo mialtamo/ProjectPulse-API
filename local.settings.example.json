@@ -1,0 +1,17 @@
+{
+  "IsEncrypted": false,
+  "Values": {
+    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+    "FUNCTIONS_WORKER_RUNTIME": "dotnet-isolated",
+    "FAKE_CLAIM_JSON": "{\"uniqueId\":\"\",\"memberId\":\"MEM-12345\",\"claimAmount\":245.67,\"procedureCode\":\"99213\"}",
+    "FAKE_CLAIMS_PER_POLL": "10",
+    "FAKE_API_DELAY_MS": "0",
+    "FAKE_AUTO_GENERATE_ON_POLL": "true",
+    "UNIQUE_ID_FIELD": "uniqueId",
+    "MOCK_CLAIMS_TABLE": "PulseClaims",
+    "MOCK_STORAGE_CONNECTION_STRING": "",
+    "PROJECT_PULSE_API_VERSION": "0.1.0",
+    "PROJECT_PULSE_API_ENVIRONMENT": "POC",
+    "AzureWebJobsDisableHomepage": "true"
+  }
+}
