@@ -19,7 +19,7 @@ Set `PROJECT_PULSE_API_VERSION`, `PROJECT_PULSE_API_ENVIRONMENT`, and `AzureWebJ
 
 ## Important settings
 
-`FAKE_CLAIM_JSON` is the JSON template returned to Project Pulse. Change it without rebuilding the Function App.
+`FAKE_CLAIM_JSON` is treated as a reusable shape/default template. When `FAKE_AUTO_GENERATE_ON_POLL=true`, the API generates fresh identity values for each claim, including `REQUEST_ID`, `CORRELATION_ID`, `IDEMPOTENCY_KEY`, and the configured `UNIQUE_ID_FIELD`. It also varies obvious mock fields such as patient/sponsor ICNs and, when present, member ID, claim amount, procedure code, and service dates. Contract fields such as `REQUEST_TYPE` and `PROGRAM` remain whatever the template specifies.
 
 `FAKE_CLAIMS_PER_POLL` controls how many records are generated per poll. The `maxRecords` query parameter acts as a cap.
 
@@ -27,6 +27,6 @@ Set `PROJECT_PULSE_API_VERSION`, `PROJECT_PULSE_API_ENVIRONMENT`, and `AzureWebJ
 
 `FAKE_API_DELAY_MS` simulates latency.
 
-`UNIQUE_ID_FIELD` controls the name of the claim identifier property. If the template does not contain a value for that field, the API generates one.
+`UNIQUE_ID_FIELD` controls the internal mock claim identifier property. Auto-generated polls always replace that field with a new generated value, even if the template contains a fixed value. Manually submitted claims keep the normal submit behavior.
 
 The API uses Azure Table Storage so generated claims can be retrieved again by ID. By default it uses the Function App's `AzureWebJobsStorage`. Set `MOCK_STORAGE_CONNECTION_STRING` only if you want a separate storage account.

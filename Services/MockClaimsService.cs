@@ -234,9 +234,71 @@ public sealed class MockClaimsService
             };
         }
 
+        ApplyGeneratedValues(payload);
+
+        var uniqueIdField = _configuration["UNIQUE_ID_FIELD"] ?? "uniqueId";
+        payload.Remove(uniqueIdField);
         GetUniqueId(payload);
+
         payload["mockGeneratedAt"] = DateTimeOffset.UtcNow;
         return payload;
+    }
+
+    private static void ApplyGeneratedValues(JsonObject payload)
+    {
+        payload["REQUEST_ID"] = CreateRequestId();
+        payload["CORRELATION_ID"] = Guid.NewGuid().ToString();
+        payload["IDEMPOTENCY_KEY"] = Guid.NewGuid().ToString();
+
+        if (payload["METADATA"] is JsonObject metadata)
+        {
+            metadata["PATIENT_ICN"] = CreateIcn();
+            metadata["SPONSOR_ICN"] = CreateIcn();
+
+            if (metadata["START_DATE_OF_SERVICE"] is not null)
+            {
+                var start = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(-Random.Shared.Next(1, 90)));
+                metadata["START_DATE_OF_SERVICE"] = start.ToString("yyyy-MM-dd");
+            }
+
+            if (metadata["END_DATE_OF_SERVICE"] is not null)
+            {
+                var end = DateOnly.FromDateTime(DateTime.UtcNow);
+                metadata["END_DATE_OF_SERVICE"] = end.ToString("yyyy-MM-dd");
+            }
+        }
+
+        if (payload["memberId"] is not null)
+        {
+            payload["memberId"] = $"MEM-{Random.Shared.Next(10000, 99999)}";
+        }
+
+        if (payload["claimAmount"] is not null)
+        {
+            payload["claimAmount"] = Math.Round(Random.Shared.NextDouble() * 5000 + 25, 2);
+        }
+
+        if (payload["procedureCode"] is not null)
+        {
+            payload["procedureCode"] = Random.Shared.Next(10000, 99999).ToString();
+        }
+    }
+
+    private static long CreateRequestId() =>
+        BitConverter.ToInt64(Guid.NewGuid().ToByteArray(), 0) & long.MaxValue;
+
+    private static string CreateIcn() =>
+        $"{RandomDigits(10)}V{RandomDigits(6)}";
+
+    private static string RandomDigits(int count)
+    {
+        var chars = new char[count];
+        for (var i = 0; i < count; i++)
+        {
+            chars[i] = (char)('0' + Random.Shared.Next(0, 10));
+        }
+
+        return new string(chars);
     }
 
     private string GetUniqueId(JsonObject payload)
