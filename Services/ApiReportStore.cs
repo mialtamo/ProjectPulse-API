@@ -17,7 +17,7 @@ public sealed record ApiReportRecord(
 public sealed class ApiReportStore
 {
     private const string PartitionKey = "reports";
-    private const int MaxBodyLength = 48000;
+    private const int MaxBodyLength = 24000;
 
     private readonly TableClient _table;
 
