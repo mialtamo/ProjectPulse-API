@@ -114,17 +114,108 @@ public sealed class MockClaimsService
         try
         {
             var entity = (await _table.GetEntityAsync<TableEntity>(PartitionKey, uniqueId, cancellationToken: cancellationToken)).Value;
-            entity["Status"] = "Completed";
-            entity["ResultJson"] = resultJson;
-            entity["CompletedAt"] = DateTimeOffset.UtcNow;
-            await _table.UpdateEntityAsync(entity, entity.ETag, TableUpdateMode.Replace, cancellationToken);
-            return true;
+            return await CompleteEntityAsync(entity, resultJson, cancellationToken);
         }
         catch (RequestFailedException ex) when (ex.Status == 404)
         {
             return false;
         }
     }
+
+    public async Task<bool> SaveResultByCorrelationIdAsync(
+        string correlationId,
+        string resultJson,
+        CancellationToken cancellationToken)
+    {
+        await DelayAsync(cancellationToken);
+        await _table.CreateIfNotExistsAsync(cancellationToken);
+
+        TableEntity? newestMatch = null;
+
+        var filter =
+            TableClient.CreateQueryFilter(
+                $"PartitionKey eq {PartitionKey}");
+
+        await foreach (
+            var entity in _table.QueryAsync<TableEntity>(
+                filter,
+                cancellationToken: cancellationToken))
+        {
+            var payloadJson =
+                entity.GetString("PayloadJson")
+                ?? "{}";
+
+            try
+            {
+                using var document =
+                    JsonDocument.Parse(payloadJson);
+
+                var root =
+                    document.RootElement;
+
+                if (root.ValueKind != JsonValueKind.Object ||
+                    !root.TryGetProperty(
+                        "CORRELATION_ID",
+                        out var value))
+                {
+                    continue;
+                }
+
+                var candidate =
+                    value.ValueKind == JsonValueKind.String
+                        ? value.GetString()
+                        : value.ToString();
+
+                if (!string.Equals(
+                    candidate,
+                    correlationId,
+                    StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                if (newestMatch is null ||
+                    GetSubmittedAt(entity) >
+                    GetSubmittedAt(newestMatch))
+                {
+                    newestMatch = entity;
+                }
+            }
+            catch (JsonException)
+            {
+                continue;
+            }
+        }
+
+        return newestMatch is not null &&
+            await CompleteEntityAsync(
+                newestMatch,
+                resultJson,
+                cancellationToken);
+    }
+
+    private async Task<bool> CompleteEntityAsync(
+        TableEntity entity,
+        string resultJson,
+        CancellationToken cancellationToken)
+    {
+        entity["Status"] = "Completed";
+        entity["ResultJson"] = resultJson;
+        entity["CompletedAt"] = DateTimeOffset.UtcNow;
+
+        await _table.UpdateEntityAsync(
+            entity,
+            entity.ETag,
+            TableUpdateMode.Replace,
+            cancellationToken);
+
+        return true;
+    }
+
+    private static DateTimeOffset GetSubmittedAt(
+        TableEntity entity) =>
+        entity.GetDateTimeOffset("SubmittedAt")
+        ?? DateTimeOffset.MinValue;
 
     private JsonObject BuildPayload()
     {
