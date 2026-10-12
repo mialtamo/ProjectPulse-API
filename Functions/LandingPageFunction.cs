@@ -258,6 +258,10 @@ public sealed class LandingPageFunction
             color: var(--violet);
         }
 
+        .put {
+            color: var(--amber);
+        }
+
         .path {
             color: #e2edff;
         }
@@ -400,6 +404,10 @@ public sealed class LandingPageFunction
                 POST /claims
             </option>
 
+            <option value="status">
+                PUT /requests/{correlationId}/status
+            </option>
+
             <option value="result">
                 POST /claims/{uniqueId}/result
             </option>
@@ -457,6 +465,14 @@ public sealed class LandingPageFunction
                 path: '/claims',
                 description:
                     'Submits a fake claim. If the body is empty, FAKE_CLAIM_JSON is used as the template.'
+            },
+
+            status: {
+                method: 'PUT',
+                cls: 'put',
+                path: '/requests/{correlationId}/status',
+                description:
+                    'Simulates the RTA status callback used by Project Pulse after adjudication.'
             },
 
             result: {
