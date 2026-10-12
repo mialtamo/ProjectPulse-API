@@ -147,7 +147,7 @@ button{cursor:pointer}.muted{color:var(--muted)}
 .table-wrap{border:1px solid var(--border);border-radius:10px;overflow:auto;background:var(--panel)}
 table{width:100%;border-collapse:collapse;min-width:1000px}th,td{padding:10px 12px;border-bottom:1px solid var(--border);font-size:12px;vertical-align:top}
 th{background:#0c1621;color:#9fb4cf;text-align:left;white-space:nowrap}tr.data-row{cursor:pointer}tr.data-row:hover{background:#0f1a27}
-.method{font-weight:700}.GET{color:var(--green)}.POST{color:var(--purple)}.code-ok{color:var(--green)}.code-bad{color:var(--red)}
+.method{font-weight:700}.GET{color:var(--green)}.POST{color:var(--purple)}.PUT{color:var(--amber)}.code-ok{color:var(--green)}.code-bad{color:var(--red)}
 .id{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;max-width:320px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .expand-row{display:none;background:#07101a}.expand-row.open{display:table-row}.expand-cell{padding:16px}
 .payload-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.payload-title{font-size:12px;font-weight:700;margin:0 0 7px;color:#c7d9f2}
@@ -157,11 +157,11 @@ pre{margin:0;white-space:pre-wrap;word-break:break-word;background:#020407;borde
 </style>
 </head>
 <body>
-<header><div><h1>PROJECT PULSE API REPORTS</h1><div class="sub">Mock API GET and POST activity</div></div><a href="/">Home</a></header>
+<header><div><h1>PROJECT PULSE API REPORTS</h1><div class="sub">Mock API GET, POST, and PUT activity</div></div><a href="/">Home</a></header>
 <main>
 <div class="toolbar">
 <input id="search" type="search" placeholder="Search method, route, ID, status..." oninput="render()">
-<select id="method" onchange="render()"><option value="">All methods</option><option value="GET">GET</option><option value="POST">POST</option></select>
+<select id="method" onchange="render()"><option value="">All methods</option><option value="GET">GET</option><option value="POST">POST</option><option value="PUT">PUT</option></select>
 <button onclick="load()">Refresh</button>
 </div>
 <div id="summary" class="summary"></div>
@@ -175,7 +175,7 @@ let items=[];const detailCache=new Map();
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function pretty(value){if(value===null||value===undefined||value==='')return 'No body recorded';let t=String(value);try{t=JSON.stringify(JSON.parse(t),null,2)}catch{}return esc(t)}
 function filtered(){const q=document.getElementById('search').value.trim().toLowerCase();const method=document.getElementById('method').value;return items.filter(x=>(!method||x.Method===method)&&(!q||[x.Method,x.Route,x.HttpStatusCode,x.UniqueId,x.ClaimCount].some(v=>String(v??'').toLowerCase().includes(q))))}
-function render(){const list=filtered();const gets=list.filter(x=>x.Method==='GET').length,posts=list.filter(x=>x.Method==='POST').length;document.getElementById('summary').innerHTML='<span class="pill">'+list.length+' visible</span><span class="pill">'+gets+' GET</span><span class="pill">'+posts+' POST</span>';const tbody=document.getElementById('rows');if(!list.length){tbody.innerHTML='<tr><td colspan="6" class="empty">No API activity recorded yet</td></tr>';return}tbody.innerHTML=list.map((x,i)=>{const row='r-'+i;return '<tr class="data-row" onclick="toggle(\''+row+'\',\''+esc(x.Id)+'\')"><td>'+new Date(x.CreatedAtUtc).toLocaleString()+'</td><td class="method '+esc(x.Method)+'">'+esc(x.Method)+'</td><td class="id" title="'+esc(x.Route)+'">'+esc(x.Route)+'</td><td class="'+(Number(x.HttpStatusCode)<400?'code-ok':'code-bad')+'">'+esc(x.HttpStatusCode)+'</td><td>'+esc(x.ClaimCount??'')+'</td><td class="id" title="'+esc(x.UniqueId??'')+'">'+esc(x.UniqueId??'')+'</td></tr><tr id="'+row+'" class="expand-row"><td colspan="6" class="expand-cell"><div class="muted">Loading...</div></td></tr>'}).join('')}
+function render(){const list=filtered();const gets=list.filter(x=>x.Method==='GET').length,posts=list.filter(x=>x.Method==='POST').length,puts=list.filter(x=>x.Method==='PUT').length;document.getElementById('summary').innerHTML='<span class="pill">'+list.length+' visible</span><span class="pill">'+gets+' GET</span><span class="pill">'+posts+' POST</span><span class="pill">'+puts+' PUT</span>';const tbody=document.getElementById('rows');if(!list.length){tbody.innerHTML='<tr><td colspan="6" class="empty">No API activity recorded yet</td></tr>';return}tbody.innerHTML=list.map((x,i)=>{const row='r-'+i;return '<tr class="data-row" onclick="toggle(\''+row+'\',\''+esc(x.Id)+'\')"><td>'+new Date(x.CreatedAtUtc).toLocaleString()+'</td><td class="method '+esc(x.Method)+'">'+esc(x.Method)+'</td><td class="id" title="'+esc(x.Route)+'">'+esc(x.Route)+'</td><td class="'+(Number(x.HttpStatusCode)<400?'code-ok':'code-bad')+'">'+esc(x.HttpStatusCode)+'</td><td>'+esc(x.ClaimCount??'')+'</td><td class="id" title="'+esc(x.UniqueId??'')+'">'+esc(x.UniqueId??'')+'</td></tr><tr id="'+row+'" class="expand-row"><td colspan="6" class="expand-cell"><div class="muted">Loading...</div></td></tr>'}).join('')}
 async function toggle(rowId,id){const row=document.getElementById(rowId);const opening=!row.classList.contains('open');document.querySelectorAll('.expand-row.open').forEach(r=>r.classList.remove('open'));if(!opening)return;row.classList.add('open');let x=detailCache.get(id);if(!x){const r=await fetch('/reports/'+encodeURIComponent(id),{cache:'no-store'});if(!r.ok){row.querySelector('td').innerHTML='<div class="muted">Could not load report details.</div>';return}x=await r.json();detailCache.set(id,x)}row.querySelector('td').innerHTML='<div class="payload-grid"><div><div class="payload-title">Request Body</div><pre>'+pretty(x.RequestBody)+'</pre></div><div><div class="payload-title">Response Body</div><pre>'+pretty(x.ResponseBody)+'</pre></div></div>'}
 async function load(){detailCache.clear();const r=await fetch('/reports',{cache:'no-store'});items=await r.json();render()}
 load();setInterval(load,30000);

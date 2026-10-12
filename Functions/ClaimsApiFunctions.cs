@@ -238,6 +238,69 @@ await WriteJsonAsync(
         return response;
     }
 
+    [Function("SaveRequestStatus")]
+    public async Task<HttpResponseData> SaveRequestStatus(
+        [HttpTrigger(
+            AuthorizationLevel.Anonymous,
+            "put",
+            Route = "requests/{correlationId}/status")]
+        HttpRequestData request,
+        string correlationId,
+        CancellationToken cancellationToken)
+    {
+        using var reader =
+            new StreamReader(
+                request.Body,
+                Encoding.UTF8);
+
+        var resultJson =
+            await reader.ReadToEndAsync(
+                cancellationToken);
+
+        if (string.IsNullOrWhiteSpace(resultJson))
+        {
+            resultJson = "{}";
+        }
+
+        var saved =
+            await _claims.SaveResultByCorrelationIdAsync(
+                correlationId,
+                resultJson,
+                cancellationToken);
+
+        if (!saved)
+        {
+            await _reports.RecordAsync(
+                "PUT",
+                request.Url.PathAndQuery,
+                (int)HttpStatusCode.NotFound,
+                correlationId,
+                1,
+                resultJson,
+                null,
+                cancellationToken);
+
+            return request.CreateResponse(
+                HttpStatusCode.NotFound);
+        }
+
+        var response =
+            request.CreateResponse(
+                HttpStatusCode.OK);
+
+        await _reports.RecordAsync(
+            "PUT",
+            request.Url.PathAndQuery,
+            (int)HttpStatusCode.OK,
+            correlationId,
+            1,
+            resultJson,
+            null,
+            cancellationToken);
+
+        return response;
+    }
+
     [Function("SaveClaimResult")]
     public async Task<HttpResponseData> SaveResult(
         [HttpTrigger(
