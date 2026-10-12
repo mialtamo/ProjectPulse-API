@@ -10,13 +10,16 @@ namespace ProjectPulse.Api.Functions;
 public sealed class ClaimsApiFunctions
 {
     private readonly MockClaimsService _claims;
+    private readonly ApiReportStore _reports;
     private readonly IConfiguration _configuration;
 
     public ClaimsApiFunctions(
         MockClaimsService claims,
+        ApiReportStore reports,
         IConfiguration configuration)
     {
         _claims = claims;
+        _reports = reports;
         _configuration = configuration;
     }
 
@@ -78,6 +81,16 @@ await WriteJsonAsync(
             response,
             claims);
 
+        await _reports.RecordAsync(
+            "GET",
+            request.Url.PathAndQuery,
+            (int)HttpStatusCode.OK,
+            null,
+            claims.Count,
+            null,
+            JsonSerializer.Serialize(claims),
+            cancellationToken);
+
         return response;
     }
 
@@ -98,6 +111,16 @@ await WriteJsonAsync(
 
         if (claim is null)
         {
+            await _reports.RecordAsync(
+                "GET",
+                request.Url.PathAndQuery,
+                (int)HttpStatusCode.NotFound,
+                uniqueId,
+                null,
+                null,
+                null,
+                cancellationToken);
+
             return request.CreateResponse(
                 HttpStatusCode.NotFound);
         }
@@ -109,6 +132,16 @@ await WriteJsonAsync(
         await WriteJsonAsync(
             response,
             claim);
+
+        await _reports.RecordAsync(
+            "GET",
+            request.Url.PathAndQuery,
+            (int)HttpStatusCode.OK,
+            uniqueId,
+            1,
+            null,
+            JsonSerializer.Serialize(claim),
+            cancellationToken);
 
         return response;
     }
@@ -148,13 +181,26 @@ await WriteJsonAsync(
                 request.CreateResponse(
                     HttpStatusCode.BadRequest);
 
-            await WriteJsonAsync(
-                bad,
+            var badBody =
                 new
                 {
                     error =
                         "Request body is not valid JSON."
-                });
+                };
+
+            await WriteJsonAsync(
+                bad,
+                badBody);
+
+            await _reports.RecordAsync(
+                "POST",
+                request.Url.PathAndQuery,
+                (int)HttpStatusCode.BadRequest,
+                null,
+                null,
+                body,
+                JsonSerializer.Serialize(badBody),
+                cancellationToken);
 
             return bad;
         }
@@ -168,13 +214,26 @@ await WriteJsonAsync(
             request.CreateResponse(
                 HttpStatusCode.Accepted);
 
-        await WriteJsonAsync(
-            response,
+        var submitBody =
             new
             {
                 uniqueId,
                 status = "Pending"
-            });
+            };
+
+        await WriteJsonAsync(
+            response,
+            submitBody);
+
+        await _reports.RecordAsync(
+            "POST",
+            request.Url.PathAndQuery,
+            (int)HttpStatusCode.Accepted,
+            uniqueId,
+            1,
+            body,
+            JsonSerializer.Serialize(submitBody),
+            cancellationToken);
 
         return response;
     }
@@ -211,6 +270,16 @@ await WriteJsonAsync(
 
         if (!saved)
         {
+            await _reports.RecordAsync(
+                "POST",
+                request.Url.PathAndQuery,
+                (int)HttpStatusCode.NotFound,
+                uniqueId,
+                1,
+                resultJson,
+                null,
+                cancellationToken);
+
             return request.CreateResponse(
                 HttpStatusCode.NotFound);
         }
@@ -219,13 +288,26 @@ await WriteJsonAsync(
             request.CreateResponse(
                 HttpStatusCode.OK);
 
-        await WriteJsonAsync(
-            response,
+        var resultBody =
             new
             {
                 uniqueId,
                 status = "Completed"
-            });
+            };
+
+        await WriteJsonAsync(
+            response,
+            resultBody);
+
+        await _reports.RecordAsync(
+            "POST",
+            request.Url.PathAndQuery,
+            (int)HttpStatusCode.OK,
+            uniqueId,
+            1,
+            resultJson,
+            JsonSerializer.Serialize(resultBody),
+            cancellationToken);
 
         return response;
     }

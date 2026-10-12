@@ -23,5 +23,6 @@ builder.Services.AddSingleton(sp =>
 });
 
 builder.Services.AddSingleton<MockClaimsService>();
+builder.Services.AddSingleton<ApiReportStore>();
 
 builder.Build().Run();
