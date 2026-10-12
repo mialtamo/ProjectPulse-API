@@ -235,7 +235,11 @@ public sealed class MockClaimsService
         }
 
         ApplyGeneratedValues(payload);
+
+        var uniqueIdField = _configuration["UNIQUE_ID_FIELD"] ?? "uniqueId";
+        payload.Remove(uniqueIdField);
         GetUniqueId(payload);
+
         payload["mockGeneratedAt"] = DateTimeOffset.UtcNow;
         return payload;
     }
@@ -281,7 +285,7 @@ public sealed class MockClaimsService
     }
 
     private static long CreateRequestId() =>
-        checked(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() * 1000L + Random.Shared.Next(0, 1000));
+        BitConverter.ToInt64(Guid.NewGuid().ToByteArray(), 0) & long.MaxValue;
 
     private static string CreateIcn() =>
         $"{RandomDigits(10)}V{RandomDigits(6)}";
