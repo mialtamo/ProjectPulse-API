@@ -15,8 +15,8 @@
     "slotSetting": false
   },
   {
-    "name": "FAKE_CLAIM_JSON",
-    "value": "{\"uniqueId\":\"\",\"memberId\":\"MEM-12345\",\"claimAmount\":245.67,\"procedureCode\":\"99213\"}",
+    "name": "AZURE_SQL_CONNECTION_STRING",
+    "value": "Server=tcp:<server>.database.windows.net,1433;Initial Catalog=project-pulse-db;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;Authentication=Active Directory Managed Identity",
     "slotSetting": false
   },
   {
@@ -30,8 +30,8 @@
     "slotSetting": false
   },
   {
-    "name": "FAKE_AUTO_GENERATE_ON_POLL",
-    "value": "true",
+    "name": "FAKE_CLAIM_JSON",
+    "value": "{\"REQUEST_ID\":1,\"CORRELATION_ID\":\"replace-with-guid\",\"IDEMPOTENCY_KEY\":\"replace-with-guid\",\"EXTERNAL_CORRELATION_ID\":null,\"INTERFACE_ID\":1,\"REQUEST_QUEUE_ID\":1,\"REQUEST_QUEUE_STATUS_TYPE\":\"PROCESSING\",\"REQUEST_STATUS_TYPE\":\"INPROGRESS\",\"REQUEST_TYPE\":\"INITIAL_REQUEST\",\"INITIAL_REQUEST_METADATA\":{\"PATIENT_ICN\":\"1099800000V000001\",\"SPONSOR_ICN\":\"1099800000V500001\",\"START_DATE_OF_SERVICE\":\"2026-01-01\",\"END_DATE_OF_SERVICE\":\"2026-01-02\",\"PROGRAM\":\"CHAMPVA\",\"INCLUDE_ADJUSTMENT_DETAILS\":false},\"UPDATE_REQUEST_METADATA\":null}",
     "slotSetting": false
   },
   {
@@ -40,13 +40,13 @@
     "slotSetting": false
   },
   {
-    "name": "MOCK_CLAIMS_TABLE",
-    "value": "PulseClaims",
+    "name": "MOCK_STORAGE_CONNECTION_STRING",
+    "value": "",
     "slotSetting": false
   },
   {
-    "name": "MOCK_STORAGE_CONNECTION_STRING",
-    "value": "",
+    "name": "MOCK_REPORTS_TABLE",
+    "value": "PulseApiReports",
     "slotSetting": false
   }
 ]
