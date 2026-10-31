@@ -115,6 +115,16 @@ public sealed class SqlMockClaimsService
         await using var connection = await OpenConnectionAsync(cancellationToken);
         await using var command = new SqlCommand(
             """
+            DECLARE @ResolvedCorrelationId nvarchar(128) =
+                COALESCE(@CorrelationId, CONVERT(nvarchar(36), NEWID()));
+            DECLARE @ResolvedPayloadJson nvarchar(max) = @PayloadJson;
+
+            IF JSON_VALUE(@PayloadJson, '$.CORRELATION_ID') IS NULL
+            BEGIN
+                SET @ResolvedPayloadJson =
+                    JSON_MODIFY(@PayloadJson, '$.CORRELATION_ID', @ResolvedCorrelationId);
+            END;
+
             INSERT dbo.MockClaimQueue
             (
                 UniqueId, RtaRequestId, CorrelationId, IdempotencyKey,
@@ -122,8 +132,8 @@ public sealed class SqlMockClaimsService
             )
             VALUES
             (
-                @UniqueId, @RtaRequestId, @CorrelationId, @IdempotencyKey,
-                @RequestType, @Program, N'QUEUED', @PayloadJson
+                @UniqueId, @RtaRequestId, @ResolvedCorrelationId, @IdempotencyKey,
+                @RequestType, @Program, N'QUEUED', @ResolvedPayloadJson
             );
             """,
             connection);

@@ -25,7 +25,8 @@ BEGIN
         ClaimId             bigint IDENTITY(1,1) NOT NULL,
         UniqueId            nvarchar(128) NOT NULL,
         RtaRequestId         nvarchar(100) NULL,
-        CorrelationId        nvarchar(128) NULL,
+        CorrelationId        nvarchar(128) NOT NULL
+            CONSTRAINT DF_MockClaimQueue_CorrelationId DEFAULT (CONVERT(nvarchar(36), NEWID())),
         IdempotencyKey       nvarchar(128) NULL,
         RequestType          nvarchar(50) NULL,
         Program              nvarchar(80) NULL,
@@ -41,6 +42,7 @@ BEGIN
 
         CONSTRAINT PK_MockClaimQueue PRIMARY KEY CLUSTERED (ClaimId),
         CONSTRAINT UQ_MockClaimQueue_UniqueId UNIQUE (UniqueId),
+        CONSTRAINT UQ_MockClaimQueue_CorrelationId UNIQUE (CorrelationId),
         CONSTRAINT CK_MockClaimQueue_Status
             CHECK (Status IN (N'QUEUED', N'PROCESSING', N'COMPLETED')),
         CONSTRAINT CK_MockClaimQueue_PayloadJson
