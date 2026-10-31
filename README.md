@@ -52,6 +52,6 @@ Run `database/003_seed_mock_claims.sql` against `project-pulse-db`. Change `@Cla
 
 ## Landing page
 
-The Function App includes a branded Project Pulse API landing page at `/` and `/pulse-api`. It includes a live SQL/Table Storage health panel that refreshes every five seconds and an endpoint selector for the mock API operations.
+The Function App includes a branded Project Pulse API landing page at `/` and `/pulse-api`. Its system status checks whether the Function API is reachable and runs a live `SELECT 1` probe against Azure SQL Database every five seconds. The `/health` endpoint returns HTTP 200 when SQL is connected and HTTP 503 when the SQL probe fails. The page also includes an endpoint selector for the mock API operations.
 
 Set `PROJECT_PULSE_API_VERSION`, `PROJECT_PULSE_API_ENVIRONMENT`, and `AzureWebJobsDisableHomepage=true` in the Function App environment variables.

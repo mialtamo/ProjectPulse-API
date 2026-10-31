@@ -367,8 +367,8 @@ public sealed class LandingPageFunction
         </div>
 
         <div>
-            Checking Table Storage.......
-            <span id="storageStatus" class="checking">&lt;CHECKING...&gt;</span>
+            Checking Azure SQL Database...
+            <span id="sqlStatus" class="checking">&lt;CHECKING...&gt;</span>
         </div>
 
         <div class="last-check" id="lastCheck">
@@ -440,7 +440,7 @@ public sealed class LandingPageFunction
                 cls: 'get',
                 path: '/health',
                 description:
-                    'Checks the Project Pulse API and its Table Storage dependency.'
+                    'Checks API availability and verifies a live Azure SQL Database connection.'
             },
 
             pending: {
@@ -529,15 +529,15 @@ public sealed class LandingPageFunction
             const api =
                 document.getElementById('apiStatus');
 
-            const storage =
-                document.getElementById('storageStatus');
+            const sql =
+                document.getElementById('sqlStatus');
 
             api.className =
-                storage.className =
+                sql.className =
                     'checking';
 
             api.textContent =
-                storage.textContent =
+                sql.textContent =
                     '<CHECKING...>';
 
             try {
@@ -553,11 +553,11 @@ public sealed class LandingPageFunction
 
                 setStatus(
                     'apiStatus',
-                    response.ok);
+                    response.ok || response.status === 503);
 
                 setStatus(
-                    'storageStatus',
-                    data.storage === true);
+                    'sqlStatus',
+                    data.IS_HEALTHY === true);
 
                 document
                     .getElementById('lastCheck')
@@ -572,7 +572,7 @@ public sealed class LandingPageFunction
                     false);
 
                 setStatus(
-                    'storageStatus',
+                    'sqlStatus',
                     false);
 
                 document
