@@ -15,6 +15,8 @@ DECLARE @RequestCount int = 1;
 IF @RequestCount < 1 OR @RequestCount > 10000
     THROW 50031, 'RequestCount must be between 1 and 10000.', 1;
 
+DECLARE @Inserted TABLE (CorrelationId nvarchar(36) NOT NULL PRIMARY KEY);
+
 DECLARE @Seed TABLE
 (
     N               int NOT NULL PRIMARY KEY,
@@ -59,6 +61,7 @@ INSERT dbo.MockClaimQueue
     UniqueId, RtaRequestId, CorrelationId, IdempotencyKey,
     RequestType, Program, PayloadJson
 )
+OUTPUT INSERTED.CorrelationId INTO @Inserted (CorrelationId)
 SELECT
     CONCAT(N'UPDATE-', REPLACE(s.CorrelationId, N'-', N'')),
     CONVERT(nvarchar(100), s.RequestId),
@@ -110,10 +113,10 @@ CROSS APPLY
 ) AS payload;
 
 SELECT
-    RequestType,
-    Status,
+    q.RequestType,
+    q.Status,
     COUNT_BIG(*) AS InsertedRequests
-FROM dbo.MockClaimQueue
-WHERE RequestType = N'UPDATE_REQUEST'
-  AND CreatedAtUtc >= DATEADD(MINUTE, -1, SYSUTCDATETIME())
-GROUP BY RequestType, Status;
+FROM dbo.MockClaimQueue AS q
+JOIN @Inserted AS i
+  ON i.CorrelationId = q.CorrelationId
+GROUP BY q.RequestType, q.Status;
