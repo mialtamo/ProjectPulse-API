@@ -1,6 +1,7 @@
 <Project Sdk="Azure.Functions.Sdk/1.0.0">
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
+    <Version>0.2.0</Version>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <LangVersion>latest</LangVersion>

@@ -134,6 +134,92 @@ public sealed class ClaimsApiFunctions
         return response;
     }
 
+    [Function("SubmitUpdateRequest")]
+    public async Task<HttpResponseData> SubmitUpdate(
+        [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "updates")]
+        HttpRequestData request,
+        CancellationToken cancellationToken)
+    {
+        using var reader = new StreamReader(request.Body, Encoding.UTF8);
+        var body = await reader.ReadToEndAsync(cancellationToken);
+
+        string? validationError = null;
+        string? correlationId = null;
+        try
+        {
+            using var parsed = JsonDocument.Parse(body);
+            var root = parsed.RootElement;
+            if (root.ValueKind != JsonValueKind.Object)
+            {
+                validationError = "Request body must be one UPDATE_REQUEST JSON object.";
+            }
+            else
+            {
+                var requestType = GetPropertyText(root, "REQUEST_TYPE");
+                correlationId = GetPropertyText(root, "CORRELATION_ID");
+                var idempotencyKey = GetPropertyText(root, "IDEMPOTENCY_KEY");
+                var updateMetadata = GetObjectProperty(root, "UPDATE_REQUEST_METADATA");
+
+                if (!string.Equals(requestType, "UPDATE_REQUEST", StringComparison.OrdinalIgnoreCase))
+                {
+                    validationError = "REQUEST_TYPE must be UPDATE_REQUEST.";
+                }
+                else if (string.IsNullOrWhiteSpace(correlationId) ||
+                         string.IsNullOrWhiteSpace(idempotencyKey))
+                {
+                    validationError = "CORRELATION_ID and IDEMPOTENCY_KEY are required.";
+                }
+                else if (updateMetadata is null)
+                {
+                    validationError = "UPDATE_REQUEST_METADATA must be a JSON object.";
+                }
+                else if (string.IsNullOrWhiteSpace(GetPropertyText(updateMetadata.Value, "PATIENT_ICN")) ||
+                         string.IsNullOrWhiteSpace(GetPropertyText(updateMetadata.Value, "START_DATE_OF_SERVICE")) ||
+                         string.IsNullOrWhiteSpace(GetPropertyText(updateMetadata.Value, "CLAIM_NUMBER")) ||
+                         string.IsNullOrWhiteSpace(GetPropertyText(updateMetadata.Value, "SOURCE")))
+                {
+                    validationError =
+                        "UPDATE_REQUEST_METADATA requires PATIENT_ICN, START_DATE_OF_SERVICE, CLAIM_NUMBER, and SOURCE.";
+                }
+                else if (!HasNumericAdjustment(updateMetadata.Value))
+                {
+                    validationError =
+                        "UPDATE_REQUEST_METADATA must include at least one numeric adjustment amount.";
+                }
+            }
+        }
+        catch (JsonException)
+        {
+            validationError = "Request body must be one valid UPDATE_REQUEST JSON object.";
+        }
+
+        if (validationError is not null)
+        {
+            var bad = request.CreateResponse(HttpStatusCode.BadRequest);
+            var badBody = new { error = validationError };
+            await WriteJsonAsync(bad, badBody);
+            await _reports.RecordAsync(
+                "POST", request.Url.PathAndQuery, (int)HttpStatusCode.BadRequest,
+                correlationId, null, body, JsonSerializer.Serialize(badBody), cancellationToken);
+            return bad;
+        }
+
+        var uniqueId = await _claims.SubmitAsync(body, cancellationToken);
+        var response = request.CreateResponse(HttpStatusCode.Accepted);
+        var submitBody = new
+        {
+            uniqueId,
+            correlationId,
+            requestType = "UPDATE_REQUEST",
+            status = "QUEUED"
+        };
+        await WriteJsonAsync(response, submitBody);
+        await _reports.RecordAsync(
+            "POST", request.Url.PathAndQuery, (int)HttpStatusCode.Accepted,
+            uniqueId, 1, body, JsonSerializer.Serialize(submitBody), cancellationToken);
+        return response;
+    }
+
     [Function("SaveRequestStatus")]
     public async Task<HttpResponseData> SaveRequestStatus(
         [HttpTrigger(AuthorizationLevel.Anonymous, "put", Route = "requests/{correlationId}/status")]
@@ -261,6 +347,82 @@ public sealed class ClaimsApiFunctions
             await WriteJsonAsync(bad, new { error = exception.Message });
             return bad;
         }
+    }
+
+    private static JsonElement? GetObjectProperty(JsonElement element, string name)
+    {
+        if (element.ValueKind != JsonValueKind.Object)
+        {
+            return null;
+        }
+
+        foreach (var property in element.EnumerateObject())
+        {
+            if (string.Equals(property.Name, name, StringComparison.OrdinalIgnoreCase))
+            {
+                return property.Value.ValueKind == JsonValueKind.Object
+                    ? property.Value
+                    : null;
+            }
+        }
+
+        return null;
+    }
+
+    private static string? GetPropertyText(JsonElement element, string name)
+    {
+        if (element.ValueKind != JsonValueKind.Object)
+        {
+            return null;
+        }
+
+        foreach (var property in element.EnumerateObject())
+        {
+            if (string.Equals(property.Name, name, StringComparison.OrdinalIgnoreCase))
+            {
+                return property.Value.ValueKind is JsonValueKind.Null or JsonValueKind.Undefined
+                    ? null
+                    : property.Value.ValueKind == JsonValueKind.String
+                        ? property.Value.GetString()
+                        : property.Value.ToString();
+            }
+        }
+
+        return null;
+    }
+
+    private static bool HasNumericAdjustment(JsonElement metadata)
+    {
+        string[] fields =
+        [
+            "ADJ_IND_DEDUCTIBLE",
+            "ADJ_FAM_DEDUCTIBLE",
+            "ADJ_OUT_OF_POCKET"
+        ];
+
+        return fields.Any(field =>
+        {
+            var value = GetObjectPropertyValue(metadata, field);
+            return value.HasValue && value.Value.ValueKind == JsonValueKind.Number;
+        });
+    }
+
+    private static JsonElement? GetObjectPropertyValue(JsonElement element, string name)
+    {
+        if (element.ValueKind != JsonValueKind.Object)
+        {
+            return null;
+        }
+
+        foreach (var property in element.EnumerateObject())
+        {
+            if (string.Equals(property.Name, name, StringComparison.OrdinalIgnoreCase))
+            {
+                return property.Value;
+            }
+        }
+
+        return null;
     }
 
     private static async Task WriteJsonAsync(HttpResponseData response, object value)

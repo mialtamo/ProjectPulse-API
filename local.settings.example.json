@@ -10,7 +10,7 @@
     "UNIQUE_ID_FIELD": "uniqueId",
     "MOCK_STORAGE_CONNECTION_STRING": "",
     "MOCK_REPORTS_TABLE": "PulseApiReports",
-    "PROJECT_PULSE_API_VERSION": "0.1.0",
+    "PROJECT_PULSE_API_VERSION": "0.2.0",
     "PROJECT_PULSE_API_ENVIRONMENT": "POC",
     "AzureWebJobsDisableHomepage": "true"
   }

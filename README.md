@@ -8,8 +8,9 @@ Mock claims API for the Project Pulse POC. Claim queue records, full RTA-shaped 
 2. Run `database/001_create_claim_queue.sql` against that database to create the queue and writeback tables, indexes, and stored procedures. Correlation IDs are required and unique in SQL; the database generates one for inserts that omit it.
 3. For an existing database created before correlation IDs were constrained as unique and required, run `database/004_enforce_correlation_ids.sql` to backfill missing IDs and enforce the constraint.
 4. Run `database/002_create_notifications.sql` against that database to create the notification inbox table.
-4. Set the Function App application setting `AZURE_SQL_CONNECTION_STRING` to a SQL connection string for that database. For a deployed Function App with a system-assigned managed identity, use a connection string with `Authentication=Active Directory Managed Identity`. Grant that identity a database user and the required permissions. For local development, use an appropriate developer credential, such as `Authentication=Active Directory Default`, or a SQL-auth connection string stored only in local settings. The project references the matching `Microsoft.Data.SqlClient.Extensions.Azure` 7.1.1 package because Microsoft.Data.SqlClient 7.x requires it for Microsoft Entra authentication.
-5. Allow the Function App to reach the SQL server through its firewall/network configuration. Do not commit real credentials or connection strings.
+5. Optionally run `database/005_seed_mock_update_requests.sql` to queue synthetic `UPDATE_REQUEST` records for DEV flow validation. The existing queue schema stores the complete request JSON and request type, so no additional SQL columns are needed.
+6. Set the Function App application setting `AZURE_SQL_CONNECTION_STRING` to a SQL connection string for that database. For a deployed Function App with a system-assigned managed identity, use a connection string with `Authentication=Active Directory Managed Identity`. Grant that identity a database user and the required permissions. For local development, use an appropriate developer credential, such as `Authentication=Active Directory Default`, or a SQL-auth connection string stored only in local settings. The project references the matching `Microsoft.Data.SqlClient.Extensions.Azure` 7.1.1 package because Microsoft.Data.SqlClient 7.x requires it for Microsoft Entra authentication.
+7. Allow the Function App to reach the SQL server through its firewall/network configuration. Do not commit real credentials or connection strings.
 
 For a system-assigned managed identity, connect as a database administrator and grant access in `project-pulse-db` (replace the bracketed name with the Function App identity name):
 
@@ -26,18 +27,19 @@ The Function App also needs `AzureWebJobsStorage` for Functions runtime storage 
 ## Queue behavior
 
 - `GET /claims/pending?maxRecords=100` executes `dbo.ClaimPendingMockClaims`. The stored procedure atomically changes returned rows from `QUEUED` to `PROCESSING`; it returns the complete JSON payload saved in `PayloadJson`.
-- `POST /claims` inserts one JSON claim as `QUEUED`. It preserves a supplied `CORRELATION_ID`; if omitted, SQL generates a GUID and stores it in both the indexed column and returned JSON payload. A unique database constraint prevents duplicate correlation IDs. The API does not generate correlation IDs.
+- `POST /claims` inserts one JSON request as `QUEUED`. It preserves a supplied `CORRELATION_ID`; if omitted, SQL generates a GUID and stores it in both the indexed column and returned JSON payload. A unique database constraint prevents duplicate correlation IDs.
+- `POST /updates` accepts one complete RTA-shaped `UPDATE_REQUEST` JSON object, validates its correlation/idempotency keys and update metadata, and inserts it into the same SQL queue as `QUEUED`. The Project Pulse Processor polls the queued request and sends it through its configured APIM update path; this API is the mock RTA source and does not call APIM directly.
 - The batch seed script generates correlation IDs in SQL, so they are assigned and stored in the database before polling.
 - `GET /claims/by-id/{uniqueId}` retrieves the saved claim JSON.
 - `PUT /requests/{correlationId}/status` appends the complete PUT JSON to `dbo.MockClaimWritebacks` and marks a matching `PROCESSING` row `COMPLETED`. Unmatched writebacks are still recorded and return HTTP 404.
 - `POST /claims/{uniqueId}/result` is a convenience endpoint that records a result by internal ID.
-- `POST /admin/notifications` accepts the RTA notification contract, saves the complete JSON and searchable fields in `dbo.MockNotifications`, and returns HTTP 200 with a plain-text receipt. `REQUEST_ID`, `REQUEST_QUEUE_ID`, and `EXTERNAL_CORRELATION_ID` may be null; notification attributes are preserved as JSON.
+- `POST /admin/notifications` accepts the RTA notification contract, saves the complete JSON and searchable fields in `dbo.MockNotifications`, and returns HTTP 200 with a plain-text receipt. This endpoint is already implemented; the landing page endpoint selector now lists it. `REQUEST_ID`, `REQUEST_QUEUE_ID`, and `EXTERNAL_CORRELATION_ID` may be null; notification attributes are preserved as JSON.
 
 The API treats queue `Status` as internal database state. It is separate from the status fields in each RTA JSON message.
 
 ## Generate fake claims with T-SQL
 
-Run `database/003_seed_mock_claims.sql` against `project-pulse-db`. Change `@ClaimCount` to a value from 1 to 10,000, then execute it to insert synthetic `INITIAL_REQUEST` records in `QUEUED` state. Each record gets a distinct request ID, correlation ID, idempotency key, request queue ID, and fake ICNs. The database generates each correlation ID and enforces uniqueness. Polling the API moves them to `PROCESSING`.
+Run `database/003_seed_mock_claims.sql` against `project-pulse-db` for synthetic `INITIAL_REQUEST` records. For update-path validation, run `database/005_seed_mock_update_requests.sql` and set `@RequestCount` to a value from 1 to 10,000. It inserts synthetic `UPDATE_REQUEST` records in `QUEUED` state with distinct correlation and idempotency keys. The initial-request script assigns a distinct request ID, correlation ID, idempotency key, request queue ID, and synthetic ICNs to every row. The database enforces correlation ID uniqueness. Polling the API moves queued records to `PROCESSING`.
 
 ## Function App settings
 

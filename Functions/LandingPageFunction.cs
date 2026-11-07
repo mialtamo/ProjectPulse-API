@@ -411,6 +411,14 @@ public sealed class LandingPageFunction
             <option value="result">
                 POST /claims/{uniqueId}/result
             </option>
+
+            <option value="update">
+                POST /updates
+            </option>
+
+            <option value="notification">
+                POST /admin/notifications
+            </option>
         </select>
 
         <div
@@ -481,6 +489,22 @@ public sealed class LandingPageFunction
                 path: '/claims/{uniqueId}/result',
                 description:
                     'Stores a simulated adjudication response for a claim.'
+            },
+
+            update: {
+                method: 'POST',
+                cls: 'post',
+                path: '/updates',
+                description:
+                    'Queues one validated UPDATE_REQUEST payload for the Project Pulse poller.'
+            },
+
+            notification: {
+                method: 'POST',
+                cls: 'post',
+                path: '/admin/notifications',
+                description:
+                    'Accepts and stores an RTA admin notification for support-flow testing.'
             }
         };
 
